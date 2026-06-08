@@ -4,7 +4,7 @@
  */
 import { useState, useCallback } from "react";
 import { useLocation } from "wouter";
-import { Shuffle, ChevronRight, Clock, Users, BookOpen, Zap, CheckCircle2, Bookmark } from "lucide-react";
+import { Shuffle, ChevronRight, Clock, Users, BookOpen, CheckCircle2, Bookmark, Search, X, BarChart2 } from "lucide-react";
 import Layout from "@/components/Layout";
 import { topicCards, categories, type TopicCard } from "@/lib/data";
 import { useProgressContext } from "@/contexts/ProgressContext";
@@ -32,13 +32,27 @@ function TopicCardPreview({
   completed,
   bookmarked,
   onToggleBookmark,
+  searchQuery,
 }: {
   card: TopicCard;
   onClick: () => void;
   completed: boolean;
   bookmarked: boolean;
   onToggleBookmark: (e: React.MouseEvent) => void;
+  searchQuery?: string;
 }) {
+  // 검색어 하이라이트 함수
+  const highlight = (text: string) => {
+    if (!searchQuery || searchQuery.trim() === "") return text;
+    const escaped = searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const parts = text.split(new RegExp(`(${escaped})`, 'gi'));
+    return parts.map((part, i) =>
+      part.toLowerCase() === searchQuery.toLowerCase()
+        ? <mark key={i} className="bg-yellow-200 text-foreground rounded px-0.5">{part}</mark>
+        : part
+    );
+  };
+
   return (
     <div
       className="suda-card bg-white rounded-2xl overflow-hidden cursor-pointer border border-border"
@@ -61,10 +75,10 @@ function TopicCardPreview({
         </div>
 
         <h3 className="font-bold text-base text-foreground mb-1 leading-snug">
-          {card.titleKo}
+          {highlight(card.titleKo)}
         </h3>
         <p className="text-sm text-muted-foreground mb-3" style={{ fontFamily: "'Noto Sans JP', sans-serif" }}>
-          {card.titleJp}
+          {highlight(card.titleJp)}
         </p>
 
         <p className="text-sm text-foreground/70 line-clamp-2 mb-4">
@@ -74,8 +88,11 @@ function TopicCardPreview({
         <div className="flex items-center justify-between">
           <div className="flex flex-wrap gap-1">
             {card.tags.slice(0, 2).map((tag) => (
-              <span key={tag} className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">
-                #{tag}
+              <span
+                key={tag}
+                className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded"
+              >
+                #{highlight(tag)}
               </span>
             ))}
           </div>
@@ -113,6 +130,7 @@ export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState<string>("전체");
   const [isDrawing, setIsDrawing] = useState(false);
   const [drawnCard, setDrawnCard] = useState<TopicCard | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const { isCompleted, isBookmarked, toggleBookmark, completedCount, bookmarkedCount } = useProgressContext();
   const [showBookmarked, setShowBookmarked] = useState(false);
@@ -122,7 +140,20 @@ export default function Home() {
     const levelMatch = selectedLevel === "전체" || card.level === selectedLevel;
     const catMatch = selectedCategory === "전체" || card.category === selectedCategory;
     const bookmarkMatch = !showBookmarked || isBookmarked(card.id);
-    return levelMatch && catMatch && bookmarkMatch;
+
+    // 검색어 필터: 제목(한/일), 태그, 카테고리, 레벨, 워밍업 질문 대상
+    const q = searchQuery.trim().toLowerCase();
+    const searchMatch = q === "" || [
+      card.titleKo,
+      card.titleJp,
+      card.category,
+      card.level,
+      card.activity,
+      ...card.tags,
+      card.warmupQuestions[0]?.ko ?? "",
+    ].some((field) => field.toLowerCase().includes(q));
+
+    return levelMatch && catMatch && bookmarkMatch && searchMatch;
   });
 
   const handleDraw = useCallback(() => {
@@ -139,6 +170,8 @@ export default function Home() {
   const handleCardClick = (card: TopicCard) => {
     navigate(`/topic/${card.id}`);
   };
+
+  const clearSearch = () => setSearchQuery("");
 
   return (
     <Layout>
@@ -195,6 +228,37 @@ export default function Home() {
       </section>
 
       <div className="p-6 max-w-5xl mx-auto">
+        {/* 검색 바 */}
+        <section className="mb-6">
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="카드 검색: 주제, 태그, 레벨, 활동 유형..."
+              className="w-full pl-12 pr-12 py-3.5 rounded-2xl border border-border bg-white text-sm focus:outline-none focus:ring-2 shadow-sm transition-all"
+              style={{ "--tw-ring-color": "oklch(0.28 0.12 265 / 0.3)" } as React.CSSProperties}
+            />
+            {searchQuery && (
+              <button
+                onClick={clearSearch}
+                className="absolute right-4 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-muted transition-colors"
+              >
+                <X className="w-4 h-4 text-muted-foreground" />
+              </button>
+            )}
+          </div>
+          {searchQuery && (
+            <div className="mt-2 text-sm text-muted-foreground px-1">
+              <span className="font-medium" style={{ color: "oklch(0.28 0.12 265)" }}>
+                "{searchQuery}"
+              </span>
+              에 대한 검색 결과: <span className="font-bold">{filteredCards.length}개</span>
+            </div>
+          )}
+        </section>
+
         {/* 랜덤 뽑기 섹션 */}
         <section className="mb-10">
           <div className="bg-white rounded-2xl border border-border p-6 shadow-sm">
@@ -352,6 +416,13 @@ export default function Home() {
             </h2>
             <div className="flex items-center gap-2">
               <button
+                onClick={() => navigate("/progress")}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border border-border bg-white text-muted-foreground hover:bg-muted transition-all duration-200"
+              >
+                <BarChart2 className="w-3.5 h-3.5" />
+                진도 통계
+              </button>
+              <button
                 onClick={() => setShowBookmarked(!showBookmarked)}
                 className={cn(
                   "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border transition-all duration-200",
@@ -370,13 +441,16 @@ export default function Home() {
           {filteredCards.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <p className="text-4xl mb-3">🔍</p>
-              <p>해당 조건의 카드가 없습니다.</p>
+              <p className="font-medium mb-1">
+                {searchQuery ? `"${searchQuery}"에 해당하는 카드가 없습니다.` : "해당 조건의 카드가 없습니다."}
+              </p>
+              <p className="text-sm mb-3">다른 검색어나 필터를 시도해보세요.</p>
               <button
-                onClick={() => { setSelectedLevel("전체"); setSelectedCategory("전체"); }}
-                className="mt-3 text-sm underline"
+                onClick={() => { setSelectedLevel("전체"); setSelectedCategory("전체"); clearSearch(); }}
+                className="mt-1 text-sm underline"
                 style={{ color: "oklch(0.65 0.16 35)" }}
               >
-                필터 초기화
+                필터 전체 초기화
               </button>
             </div>
           ) : (
@@ -389,6 +463,7 @@ export default function Home() {
                     completed={isCompleted(card.id)}
                     bookmarked={isBookmarked(card.id)}
                     onToggleBookmark={(e) => { e.stopPropagation(); toggleBookmark(card.id); }}
+                    searchQuery={searchQuery}
                   />
                 </div>
               ))}
@@ -403,7 +478,7 @@ export default function Home() {
             {categories.map((cat, i) => (
               <button
                 key={cat.id}
-                onClick={() => setSelectedCategory(cat.id)}
+                onClick={() => { setSelectedCategory(cat.id); setSearchQuery(""); }}
                 className={cn(
                   "animate-float-in p-3 rounded-xl border border-border bg-white text-center transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.97]",
                   `stagger-${Math.min(i + 1, 5)}`

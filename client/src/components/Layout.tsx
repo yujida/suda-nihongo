@@ -17,6 +17,7 @@ import {
   Menu,
   X,
   ChevronRight,
+  BarChart2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -27,6 +28,7 @@ const navItems = [
   { href: "/expressions", icon: Zap, label: "트렌드 단어장", labelJp: "トレンド単語帳" },
   { href: "/grammar", icon: GraduationCap, label: "문법은 말하기 도구", labelJp: "文法は話すツール" },
   { href: "/error-fix", icon: AlertCircle, label: "어디가 어색하지?", labelJp: "どこが不自然？" },
+  { href: "/progress", icon: BarChart2, label: "학습 진도 통계", labelJp: "学習の進捗" },
   { href: "#", icon: Headphones, label: "읽듣쓰기 훈련실", labelJp: "読聴書トレーニング" },
   { href: "#", icon: Trophy, label: "챌린지", labelJp: "チャレンジ" },
   { href: "#", icon: Tv, label: "일본 콘텐츠 추천관", labelJp: "日本コンテンツ推薦館" },

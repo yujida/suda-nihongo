@@ -11,6 +11,7 @@ import ExpressionsPage from "./pages/ExpressionsPage";
 import GrammarPage from "./pages/GrammarPage";
 import ErrorFixPage from "./pages/ErrorFixPage";
 import DialoguePage from "./pages/DialoguePage";
+import ProgressPage from "./pages/ProgressPage";
 
 function Router() {
   return (
@@ -21,6 +22,7 @@ function Router() {
       <Route path="/grammar" component={GrammarPage} />
       <Route path="/error-fix" component={ErrorFixPage} />
       <Route path="/dialogue" component={DialoguePage} />
+      <Route path="/progress" component={ProgressPage} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
