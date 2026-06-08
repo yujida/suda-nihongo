@@ -5,7 +5,7 @@
 import { useState } from "react";
 import { GraduationCap, ChevronDown, ChevronUp } from "lucide-react";
 import Layout from "@/components/Layout";
-import { grammarPatterns, type GrammarPattern } from "@/lib/data";
+import { grammarPatternsTyped as grammarPatterns, type GrammarPattern } from "@/lib/data";
 import { cn } from "@/lib/utils";
 
 const levelColors: Record<string, string> = {

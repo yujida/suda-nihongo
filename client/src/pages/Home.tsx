@@ -4,11 +4,10 @@
  */
 import { useState, useCallback } from "react";
 import { useLocation } from "wouter";
-import { Shuffle, ChevronRight, Clock, Users, BookOpen, Zap } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Shuffle, ChevronRight, Clock, Users, BookOpen, Zap, CheckCircle2, Bookmark } from "lucide-react";
 import Layout from "@/components/Layout";
 import { topicCards, categories, type TopicCard } from "@/lib/data";
+import { useProgressContext } from "@/contexts/ProgressContext";
 import { cn } from "@/lib/utils";
 
 const levelColors: Record<string, string> = {
@@ -27,7 +26,19 @@ const activityIcons: Record<string, string> = {
   '작문': '✏️',
 };
 
-function TopicCardPreview({ card, onClick }: { card: TopicCard; onClick: () => void }) {
+function TopicCardPreview({
+  card,
+  onClick,
+  completed,
+  bookmarked,
+  onToggleBookmark,
+}: {
+  card: TopicCard;
+  onClick: () => void;
+  completed: boolean;
+  bookmarked: boolean;
+  onToggleBookmark: (e: React.MouseEvent) => void;
+}) {
   return (
     <div
       className="suda-card bg-white rounded-2xl overflow-hidden cursor-pointer border border-border"
@@ -68,7 +79,28 @@ function TopicCardPreview({ card, onClick }: { card: TopicCard; onClick: () => v
               </span>
             ))}
           </div>
-          <ChevronRight className="w-4 h-4 text-muted-foreground" />
+          <div className="flex items-center gap-2">
+            {completed && (
+              <span className="text-xs font-semibold text-green-600 flex items-center gap-0.5">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                완료
+              </span>
+            )}
+            <button
+              onClick={onToggleBookmark}
+              className="p-1 rounded-lg hover:bg-muted transition-colors"
+              title={bookmarked ? "즐겨찾기 해제" : "즐겨찾기"}
+            >
+              <Bookmark
+                className="w-4 h-4"
+                style={{
+                  color: bookmarked ? "oklch(0.65 0.16 35)" : undefined,
+                  fill: bookmarked ? "oklch(0.65 0.16 35)" : "none",
+                }}
+              />
+            </button>
+            <ChevronRight className="w-4 h-4 text-muted-foreground" />
+          </div>
         </div>
       </div>
     </div>
@@ -82,12 +114,15 @@ export default function Home() {
   const [isDrawing, setIsDrawing] = useState(false);
   const [drawnCard, setDrawnCard] = useState<TopicCard | null>(null);
 
+  const { isCompleted, isBookmarked, toggleBookmark, completedCount, bookmarkedCount } = useProgressContext();
+  const [showBookmarked, setShowBookmarked] = useState(false);
   const levels = ["전체", "N5", "N4", "N3", "N2", "N1"];
 
   const filteredCards = topicCards.filter((card) => {
     const levelMatch = selectedLevel === "전체" || card.level === selectedLevel;
     const catMatch = selectedCategory === "전체" || card.category === selectedCategory;
-    return levelMatch && catMatch;
+    const bookmarkMatch = !showBookmarked || isBookmarked(card.id);
+    return levelMatch && catMatch && bookmarkMatch;
   });
 
   const handleDraw = useCallback(() => {
@@ -143,8 +178,8 @@ export default function Home() {
           {/* 통계 */}
           <div className="flex gap-4 animate-float-in stagger-2">
             {[
-              { icon: BookOpen, value: "5개+", label: "주제 카드" },
-              { icon: Zap, value: "50개+", label: "실전 표현" },
+              { icon: BookOpen, value: `${topicCards.length}개`, label: "주제 카드" },
+              { icon: CheckCircle2, value: `${completedCount}/${topicCards.length}`, label: "완료 카드" },
               { icon: Users, value: "N5~N2", label: "레벨 지원" },
             ].map(({ icon: Icon, value, label }) => (
               <div key={label} className="flex items-center gap-2 text-white/80">
@@ -315,6 +350,21 @@ export default function Home() {
                 ({filteredCards.length}개)
               </span>
             </h2>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowBookmarked(!showBookmarked)}
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border transition-all duration-200",
+                  showBookmarked
+                    ? "text-white border-transparent"
+                    : "bg-white border-border text-muted-foreground hover:bg-muted"
+                )}
+                style={showBookmarked ? { backgroundColor: "oklch(0.65 0.16 35)" } : {}}
+              >
+                <Bookmark className="w-3.5 h-3.5" style={{ fill: showBookmarked ? "white" : "none" }} />
+                즐겨찾기 ({bookmarkedCount})
+              </button>
+            </div>
           </div>
 
           {filteredCards.length === 0 ? (
@@ -333,7 +383,13 @@ export default function Home() {
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               {filteredCards.map((card, i) => (
                 <div key={card.id} className={cn("animate-float-in", `stagger-${Math.min(i + 1, 5)}`)}>
-                  <TopicCardPreview card={card} onClick={() => handleCardClick(card)} />
+                  <TopicCardPreview
+                    card={card}
+                    onClick={() => handleCardClick(card)}
+                    completed={isCompleted(card.id)}
+                    bookmarked={isBookmarked(card.id)}
+                    onToggleBookmark={(e) => { e.stopPropagation(); toggleBookmark(card.id); }}
+                  />
                 </div>
               ))}
             </div>

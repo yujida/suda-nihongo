@@ -6,11 +6,14 @@ import { useState } from "react";
 import { useParams, useLocation } from "wouter";
 import {
   ArrowLeft, Clock, Users, BookOpen, MessageSquare,
-  Zap, GraduationCap, Edit3, ChevronDown, ChevronUp, Eye, EyeOff
+  Zap, GraduationCap, Edit3, ChevronDown, ChevronUp, Eye, EyeOff,
+  Copy, Check, CheckCircle2, Bookmark, RotateCcw
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toast } from "sonner";
 import Layout from "@/components/Layout";
 import { topicCards, type TopicCard } from "@/lib/data";
+import { useProgressContext } from "@/contexts/ProgressContext";
 import { cn } from "@/lib/utils";
 
 const levelColors: Record<string, string> = {
@@ -270,8 +273,25 @@ function GrammarSection({ card }: { card: TopicCard }) {
 
 function WritingSection({ card }: { card: TopicCard }) {
   const [text, setText] = useState("");
+  const [copied, setCopied] = useState(false);
   const charCount = text.length;
   const isGoalMet = charCount >= card.writingMission.minChars;
+
+  const handleCopy = async () => {
+    if (!text.trim()) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      toast.success("클립보드에 복사되었습니다!");
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error("복사에 실패했습니다.");
+    }
+  };
+
+  const handleReset = () => {
+    setText("");
+  };
 
   return (
     <div>
@@ -307,9 +327,39 @@ function WritingSection({ card }: { card: TopicCard }) {
         </div>
       </div>
 
+      {/* 액션 버튼 */}
+      <div className="flex gap-2 mt-3">
+        <button
+          onClick={handleCopy}
+          disabled={!text.trim()}
+          className={cn(
+            "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 border",
+            text.trim()
+              ? "bg-white border-border hover:bg-muted text-foreground active:scale-[0.97]"
+              : "bg-muted border-border text-muted-foreground cursor-not-allowed"
+          )}
+        >
+          {copied ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
+          {copied ? "복사됨" : "클립보드 복사"}
+        </button>
+        <button
+          onClick={handleReset}
+          disabled={!text.trim()}
+          className={cn(
+            "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 border",
+            text.trim()
+              ? "bg-white border-border hover:bg-muted text-foreground active:scale-[0.97]"
+              : "bg-muted border-border text-muted-foreground cursor-not-allowed"
+          )}
+        >
+          <RotateCcw className="w-4 h-4" />
+          다시 쓰기
+        </button>
+      </div>
+
       {isGoalMet && (
         <div className="mt-3 p-3 rounded-xl bg-green-50 border border-green-200 text-green-700 text-sm animate-float-in">
-          🎉 목표 글자 수를 달성했습니다! 선생님께 제출해 보세요.
+          🎉 목표 글자 수를 달성했습니다! 위의 클립보드 복사 버튼으로 선생님께 공유해 보세요.
         </div>
       )}
     </div>
@@ -334,17 +384,60 @@ export default function TopicCardPage() {
     );
   }
 
+  const { isCompleted, toggleCompleted, isBookmarked, toggleBookmark } = useProgressContext();
+  const completed = isCompleted(card.id);
+  const bookmarked = isBookmarked(card.id);
+
+  const handleToggleCompleted = () => {
+    toggleCompleted(card.id);
+    if (!completed) {
+      toast.success("학습 완료 체크! 홍백이 업데이트되었습니다.");
+    } else {
+      toast("완료 표시가 해제되었습니다.");
+    }
+  };
+
   return (
     <Layout>
       <div className="max-w-3xl mx-auto p-4 lg:p-6">
         {/* 헤더 */}
-        <button
-          onClick={() => navigate("/")}
-          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          목록으로
-        </button>
+        <div className="flex items-center justify-between mb-6">
+          <button
+            onClick={() => navigate("/")}
+            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            목록으로
+          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={toggleBookmark.bind(null, card.id)}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium border transition-all duration-200 active:scale-[0.97]",
+                bookmarked
+                  ? "text-white border-transparent"
+                  : "bg-white border-border text-muted-foreground hover:bg-muted"
+              )}
+              style={bookmarked ? { backgroundColor: "oklch(0.65 0.16 35)", borderColor: "oklch(0.65 0.16 35)" } : {}}
+            >
+              <Bookmark className="w-4 h-4" style={{ fill: bookmarked ? "white" : "none" }} />
+              {bookmarked ? "즐겨찾기" : "즐겨찾기"}
+            </button>
+            <button
+              onClick={handleToggleCompleted}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium border transition-all duration-200 active:scale-[0.97]",
+                completed
+                  ? "text-white border-transparent"
+                  : "bg-white border-border text-muted-foreground hover:bg-muted"
+              )}
+              style={completed ? { backgroundColor: "oklch(0.55 0.15 145)", borderColor: "oklch(0.55 0.15 145)" } : {}}
+            >
+              <CheckCircle2 className="w-4 h-4" />
+              {completed ? "완료됨" : "완료 체크"}
+            </button>
+          </div>
+        </div>
 
         {/* 카드 헤더 */}
         <div

@@ -5,7 +5,7 @@
 import { useState } from "react";
 import { Search, Zap } from "lucide-react";
 import Layout from "@/components/Layout";
-import { trendExpressions, type TrendExpression } from "@/lib/data";
+import { trendExpressionsTyped as trendExpressions, type TrendExpression } from "@/lib/data";
 import { cn } from "@/lib/utils";
 
 const statusConfig: Record<TrendExpression["status"], { label: string; color: string; bg: string }> = {
