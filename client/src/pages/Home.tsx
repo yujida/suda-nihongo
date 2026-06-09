@@ -327,21 +327,19 @@ export default function Home() {
             <button
               onClick={handleDraw}
               disabled={isDrawing}
-              className="w-full py-4 rounded-xl text-white font-bold text-lg flex items-center justify-center gap-3 transition-all duration-200 active:scale-[0.98] disabled:opacity-70"
+              className="w-full py-4 rounded-xl text-white font-bold text-lg flex items-center justify-center gap-2 transition-all duration-200 active:scale-[0.98] disabled:opacity-70 whitespace-nowrap overflow-hidden"
               style={{ backgroundColor: "oklch(0.65 0.16 35)" }}
             >
               {isDrawing ? (
                 <>
-                  <div className="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                  주제 뽑는 중...
+                  <div className="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin flex-shrink-0" />
+                  <span className="whitespace-nowrap">주제 뽑는 중...</span>
                 </>
               ) : (
                 <>
-                  <Shuffle className="w-5 h-5" />
-                  오늘의 주제 뽑기
-                  <span className="text-sm font-normal opacity-80" style={{ fontFamily: "'Noto Sans JP', sans-serif" }}>
-                    今日のテーマを引く
-                  </span>
+                  <Shuffle className="w-5 h-5 flex-shrink-0" />
+                  <span className="whitespace-nowrap">오늘의 주제 뽑기</span>
+                  <span className="text-sm font-normal opacity-80 whitespace-nowrap hidden sm:inline" style={{ fontFamily: "'Noto Sans JP', sans-serif" }}>今日のテーマを引く</span>
                 </>
               )}
             </button>
