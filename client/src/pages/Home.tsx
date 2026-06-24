@@ -180,7 +180,7 @@ export default function Home() {
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{
-            backgroundImage: `url(https://d2xsxph8kpxj0f.cloudfront.net/310419663032155445/7pPnBSWK49SNVGzXBeK9hz/hero_banner-67xv5r32JWjc3GKjxV5uae.webp)`,
+            backgroundImage: `url(/hero-banner.jpg)`,
           }}
         />
         <div className="absolute inset-0" style={{ background: "linear-gradient(to right, oklch(0.28 0.12 265 / 0.85) 0%, oklch(0.28 0.12 265 / 0.4) 60%, transparent 100%)" }} />
